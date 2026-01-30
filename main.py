@@ -2,6 +2,7 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import shutil
 import os
@@ -10,10 +11,24 @@ import pandas as pd
 import requests
 import io
 import xlsxwriter
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Mount static files
 if not os.path.exists("static"):
@@ -37,7 +52,9 @@ async def devtools():
 
 @app.post("/analyze")
 async def analyze(files: list[UploadFile] = File(...), teacher_name: str = Form(...)):
-    # 1. Process all files
+    logger.info(f"Received analyze request for teacher: {teacher_name}, files: {len(files)}")
+    try:
+        # 1. Process all files
     results = []
     
     # Sort files by filename explicitly as requested ("Sort according to PDF")
