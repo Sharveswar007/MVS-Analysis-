@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TLP Analysis Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            min-height: 100vh;
+            padding: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        body.dark-mode {
+            background-color: #0f0f0f;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background-color: #ffffff;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .navbar {
+            background-color: #1f2937;
+            border-bottom-color: #374151;
+        }
+
+        .navbar-logo img {
+            height: 60px;
+            width: auto;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .navbar-title {
+            flex: 1;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            letter-spacing: 0.5px;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .navbar-title {
+            color: #ffffff;
+        }
+
+        .navbar-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .navbar-link {
+            color: #1f2937;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-link:hover {
+            background-color: #f3f4f6;
+            color: #000000;
+        }
+
+        body.dark-mode .navbar-link {
+            color: #e5e7eb;
+        }
+
+        body.dark-mode .navbar-link:hover {
+            background-color: #374151;
+            color: #ffffff;
+        }
+
+        .logo-container {
+            position: absolute;
+            top: 1.5rem;
+            left: 1.5rem;
+            z-index: 10;
+            display: none;
+        }
+
+        .logo-container img {
+            height: 90px;
+            width: auto;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.5rem;
+            z-index: 101;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e5e7eb;
+            transition: 0.3s;
+            border-radius: 30px;
+            border: 2px solid #d1d5db;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 2px;
+            bottom: 2px;
+            background-color: #1f2937;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: #374151;
+            border-color: #1f2937;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(30px);
+            background-color: #ffffff;
+        }
+
+        .main-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding-top: 5rem;
+            padding-bottom: 4rem;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
+            width: 100%;
+            max-width: 32rem;
+            animation: fadeIn 0.5s ease-in;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .container {
+            background-color: #1f2937;
+            border-color: #374151;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-align: center;
+            color: #000000;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode h1 {
+            color: #ffffff;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .subtitle {
+            color: #9ca3af;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode label {
+            color: #e5e7eb;
+        }
+
+        input[type="text"],
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #d1d5db;
+            border-radius: 0.5rem;
+            box-sizing: border-box;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        body.dark-mode input[type="text"],
+        body.dark-mode input[type="file"] {
+            background-color: #374151;
+            border-color: #4b5563;
+            color: #ffffff;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #000000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark-mode input[type="text"]:focus {
+            border-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+        }
+
+        input[type="file"] {
+            padding: 0.5rem;
+            cursor: pointer;
+        }
+
+        input[type="file"]::file-selector-button {
+            padding: 0.5rem 1rem;
+            border: 2px solid #000000;
+            border-radius: 0.375rem;
+            background-color: #000000;
+            color: #ffffff;
+            font-weight: 500;
+            cursor: pointer;
+            margin-right: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        body.dark-mode input[type="file"]::file-selector-button {
+            background-color: #ffffff;
+            border-color: #ffffff;
+            color: #000000;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        small {
+            color: #6b7280;
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode small {
+            color: #9ca3af;
+        }
+
+        button {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0.875rem 1rem;
+            border: 2px solid #000000;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ffffff;
+            background-color: #000000;
+            cursor: pointer;
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        body.dark-mode button {
+            background-color: #ffffff;
+            border-color: #ffffff;
+            color: #000000;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-mode button:focus {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .status-msg {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            text-align: center;
+            color: #1f2937;
+            background-color: #f3f4f6;
+            border-radius: 0.5rem;
+            border: 2px solid #d1d5db;
+            animation: slideIn 0.3s ease-out;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .status-msg {
+            color: #e5e7eb;
+            background-color: #374151;
+            border-color: #4b5563;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-msg {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            text-align: center;
+            color: #1f2937;
+            background-color: #f3f4f6;
+            border-radius: 0.5rem;
+            border: 2px solid #991b1b;
+            animation: slideIn 0.3s ease-out;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .error-msg {
+            color: #fecaca;
+            background-color: #374151;
+            border-color: #ef4444;
+        }
+
+        .success-msg {
+            color: #1f2937 !important;
+            background-color: #f3f4f6 !important;
+            border-color: #000000 !important;
+        }
+
+        body.dark-mode .success-msg {
+            color: #e5e7eb !important;
+            background-color: #374151 !important;
+            border-color: #ffffff !important;
+        }
+
+        @media (max-width: 640px) {
+            .logo-container {
+                top: 1rem;
+                left: 1rem;
+            }
+
+            .logo-container img {
+                height: 67px;
+            }
+
+            .theme-toggle {
+                top: 1rem;
+                right: 1rem;
+            }
+
+            .toggle-switch {
+                width: 50px;
+                height: 25px;
+            }
+
+            .slider:before {
+                height: 18px;
+                width: 18px;
+            }
+
+            input:checked+.slider:before {
+                transform: translateX(25px);
+            }
+
+            .container {
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e5e7eb;
+            background: transparent;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 1rem;
+            background: transparent !important;
+            border: none !important;
+            border-bottom: 3px solid transparent !important;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 0 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+        }
+
+        .tab-btn:hover {
+            color: #000000;
+            background: rgba(0, 0, 0, 0.05) !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .tab-btn.active {
+            color: #000000;
+            background: transparent !important;
+            border-bottom-color: #000000 !important;
+        }
+
+        body.dark-mode .tabs {
+            border-bottom-color: #4b5563;
+        }
+
+        body.dark-mode .tab-btn {
+            color: #9ca3af;
+            background: transparent !important;
+        }
+
+        body.dark-mode .tab-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        body.dark-mode .tab-btn.active {
+            color: #ffffff;
+            background: #1f2937 !important;
+            border: 2px solid #ffffff !important;
+            border-bottom: 3px solid #ffffff !important;
+            border-radius: 0.5rem 0.5rem 0 0 !important;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .construction-msg {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .faculty-entry {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .faculty-entry {
+            border-color: #4b5563;
+        }
+
+        .faculty-entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .faculty-entry-title {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 0.875rem;
+        }
+
+        body.dark-mode .faculty-entry-title {
+            color: #e5e7eb;
+        }
+
+        .remove-btn {
+            padding: 0.375rem 0.75rem !important;
+            font-size: 0.75rem !important;
+            background-color: #dc2626 !important;
+            border-color: #dc2626 !important;
+            color: #ffffff !important;
+            width: auto !important;
+            margin: 0 !important;
+        }
+
+        body.dark-mode .remove-btn {
+            background-color: #ef4444 !important;
+            border-color: #ef4444 !important;
+        }
+
+        .remove-btn:hover {
+            background-color: #b91c1c !important;
+            border-color: #b91c1c !important;
+        }
+
+        .add-faculty-btn {
+            width: 100% !important;
+            background-color: #059669 !important;
+            border-color: #059669 !important;
+            margin-bottom: 1rem !important;
+        }
+
+        body.dark-mode .add-faculty-btn {
+            background-color: #10b981 !important;
+            border-color: #10b981 !important;
+            color: #000000 !important;
+        }
+
+        .add-faculty-btn:hover {
+            background-color: #047857 !important;
+            border-color: #047857 !important;
+        }
+
+        .faculty-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        @media (max-width: 640px) {
+            .faculty-inputs {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #ffffff;
+            border-top: 2px solid #e5e7eb;
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .footer {
+            background-color: #1f2937;
+            border-top-color: #374151;
+        }
+
+        .footer-link {
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: #000000;
+        }
+
+        body.dark-mode .footer-link {
+            color: #9ca3af;
+        }
+
+        body.dark-mode .footer-link:hover {
+            color: #ffffff;
+        }
+
+        .about-page {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            padding-top: 6rem;
+            padding-bottom: 5rem;
+        }
+
+        .about-page h2 {
+            margin-bottom: 2rem;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 1.25rem;
+            left: 10rem;
+            z-index: 101;
+            padding: 0.375rem 0.75rem;
+            background-color: #ffffff;
+            border: 2px solid #9ca3af;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #1f2937;
+            display: inline-block;
+            width: auto;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #f3f4f6;
+            border-color: #000000;
+        }
+
+        body.dark-mode .back-button {
+            background-color: #1f2937;
+            border-color: #4b5563;
+            color: #ffffff;
+        }
+
+        body.dark-mode .back-button:hover {
+            background-color: #374151;
+            border-color: #ffffff;
+        }
+
+        .team-section {
+            display: flex;
+            flex-direction: row;
+            gap: 2rem;
+            margin-bottom: 3rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .team-member {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1rem;
+            padding: 2rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            flex: 0 1 280px;
+        }
+
+        body.dark-mode .team-member {
+            border-color: #4b5563;
+        }
+
+        .team-member:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        body.dark-mode .team-member:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .member-photo {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+
+        body.dark-mode .member-photo {
+            border-color: #4b5563;
+        }
+
+        .member-photo.zoom {
+            object-fit: cover;
+            object-position: center 20%;
+        }
+
+        .team-member h3 {
+            margin-bottom: 0.5rem;
+            color: #1f2937;
+            font-size: 1.25rem;
+        }
+
+        body.dark-mode .team-member h3 {
+            color: #ffffff;
+        }
+
+        .member-role {
+            color: #6b7280;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        body.dark-mode .member-role {
+            color: #9ca3af;
+        }
+
+        .tech-section {
+            margin-top: 3rem;
+            padding: 1.5rem;
+            background-color: #f3f4f6;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+        }
+
+        body.dark-mode .tech-section {
+            background-color: #1f2937;
+            border-color: #4b5563;
+        }
+
+        .tech-section h3 {
+            color: #1f2937;
+        }
+
+        body.dark-mode .tech-section h3 {
+            color: #ffffff;
+        }
+
+        .tech-section p {
+            color: #4b5563;
+        }
+
+        body.dark-mode .tech-section p {
+            color: #d1d5db;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.75rem;
+            justify-content: center;
+        }
+
+        .social-link {
+            color: #4b5563;
+            text-decoration: none;
+            font-size: 0.875rem;
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            transition: all 0.3s ease;
+        }
+
+        .social-link:hover {
+            background-color: #f3f4f6;
+            border-color: #000000;
+            color: #000000;
+        }
+
+        body.dark-mode .social-link {
+            color: #9ca3af;
+            border-color: #4b5563;
+        }
+
+        body.dark-mode .social-link:hover {
+            background-color: #374151;
+            border-color: #ffffff;
+            color: #ffffff;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-logo">
+            <img src="/static/srm_logo.png" alt="SRM Logo">
+        </div>
+        <div class="navbar-title">
+            Developed by MVS
+        </div>
+        <div class="navbar-links">
+        </div>
+    </nav>
+
+    <div class="logo-container">
+        <img src="/static/srm_logo.png" alt="SRM Logo">
+    </div>
+
+    <div class="theme-toggle">
+        <label class="toggle-switch">
+            <input type="checkbox" id="themeToggle">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div class="main-wrapper" id="mainContent">
+        <div class="container">
+            <h1>TLP Result Analysis</h1>
+            <p class="subtitle">Upload PDF files and generate comprehensive analysis reports</p>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('self', event)">Self</button>
+                <button class="tab-btn" onclick="switchTab('fa', event)">FA</button>
+                <button class="tab-btn" onclick="switchTab('overall', event)">Overall</button>
+            </div>
+
+            <!-- Self Tab -->
+            <div id="self" class="tab-content active">
+                <form id="uploadForm">
+                    <div class="form-group">
+                        <label for="teacherName">Teacher Name</label>
+                        <input type="text" id="teacherName" name="teacher_name" placeholder="Enter teacher name"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pdfFile">Upload PDF(s)</label>
+                        <input type="file" id="pdfFile" name="files" accept=".pdf" multiple required>
+                        <small>Select all PDFs for the analysis.</small>
+                    </div>
+
+                    <button type="submit">
+                        <span>Analyze & Download Report</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- FA Tab -->
+            <div id="fa" class="tab-content">
+                <form id="faForm">
+                    <div class="form-group">
+                        <label for="faName">Faculty Advisor Name</label>
+                        <input type="text" id="faName" name="fa_name" placeholder="Enter Faculty Advisor name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Faculty Members & Subjects</label>
+                        <div id="facultyEntriesContainer">
+                            <!-- Faculty entries will be added here -->
+                        </div>
+                        <button type="button" class="add-faculty-btn" onclick="addFacultyEntry()">
+                            <span>+ Add Faculty Member</span>
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="faPdfFile">Upload PDF(s)</label>
+                        <input type="file" id="faPdfFile" name="files" accept=".pdf" multiple required>
+                        <small>Select all PDFs containing test results for FA analysis.</small>
+                    </div>
+
+                    <button type="submit" id="faSubmitBtn">
+                        <span>Generate FA Report</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Overall Tab -->
+            <div id="overall" class="tab-content">
+                <form id="overallForm">
+                    <div class="form-group">
+                        <label for="overallPdfFile">Upload PDF(s)</label>
+                        <input type="file" id="overallPdfFile" name="files" accept=".pdf" multiple required>
+                        <small>Select all PDFs for the overall subject analysis.</small>
+                    </div>
+
+                    <button type="submit" id="overallSubmitBtn">
+                        <span>Generate Overall Report</span>
+                    </button>
+                </form>
+            </div>
+
+            <div id="status" class="status-msg hidden">
+                <p>Processing... This may take a minute.</p>
+            </div>
+
+            <div id="error" class="error-msg hidden"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div>
+            <a href="#" class="footer-link" onclick="showAboutPage(event)">About Us</a>
+        </div>
+        <div style="text-align: center; color: #6b7280; font-size: 0.75rem;">
+            © 2026 TLP Result Analysis Tool
+        </div>
+        <div></div>
+    </footer>
+
+    <!-- About Page (Hidden by default) -->
+    <div id="aboutPage" style="display: none;">
+        <button onclick="showMainContent()" class="back-button">
+            ← Back to Main
+        </button>
+        <div class="about-page">
+            
+            <h1 style="text-align: center; margin-bottom: 1rem;">About Us</h1>
+            <p style="text-align: center; color: #6b7280; margin-bottom: 3rem;">
+                TLP Result Analysis Tool - Simplifying academic performance analysis
+            </p>
+
+            <div class="team-section">
+                <div class="team-member">
+                    <img src="/static/image/magi.jpeg" alt="Magi Sharma J" class="member-photo">
+                    <h3>Magi Sharma J</h3>
+                    <p class="member-role">Full Stack Developer</p>
+                    <div class="social-links">
+                        <a href="https://github.com/magi8101" target="_blank" class="social-link">GitHub</a>
+                        <a href="https://www.linkedin.com/in/magi-sharma/" target="_blank" class="social-link">LinkedIn</a>
+                    </div>
+                </div>
+
+                <div class="team-member">
+                    <img src="/static/image/vattsa.jpeg" alt="Srivattsa R" class="member-photo">
+                    <h3>Srivattsa R</h3>
+                    <p class="member-role">Full Stack Developer</p>
+                    <div class="social-links">
+                        <a href="https://github.com/Vattsa-11" target="_blank" class="social-link">GitHub</a>
+                        <a href="https://www.linkedin.com/in/srivattsa" target="_blank" class="social-link">LinkedIn</a>
+                    </div>
+                </div>
+
+                <div class="team-member">
+                    <img src="/static/image/sharves.jpeg" alt="Sharveswar M" class="member-photo zoom">
+                    <h3>Sharveswar M</h3>
+                    <p class="member-role">Full Stack Developer</p>
+                    <div class="social-links">
+                        <a href="https://github.com/Sharveswar007" target="_blank" class="social-link">GitHub</a>
+                        <a href="https://www.linkedin.com/in/sharveswar-madasamy/" target="_blank" class="social-link">LinkedIn</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tech-section">
+                <h3 style="margin-bottom: 0.5rem; text-align: center;">Technologies Used</h3>
+                <p style="text-align: center;">FastAPI • Python • JavaScript • HTML/CSS • XlsxWriter • PDFPlumber</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Page navigation
+        function showAboutPage(event) {
+            event.preventDefault();
+            document.getElementById('mainContent').style.display = 'none';
+            document.querySelector('.navbar').style.display = 'flex';
+            document.querySelector('.footer').style.display = 'none';
+            document.getElementById('aboutPage').style.display = 'block';
+            window.scrollTo(0, 0);
+        }
+
+        function showMainContent() {
+            document.getElementById('mainContent').style.display = 'flex';
+            document.querySelector('.navbar').style.display = 'flex';
+            document.querySelector('.footer').style.display = 'flex';
+            document.getElementById('aboutPage').style.display = 'none';
+            window.scrollTo(0, 0);
+        }
+
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+
+        // Check for saved theme preference or default to light mode
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
+            body.classList.add('dark-mode');
+            themeToggle.checked = true;
+        }
+
+        themeToggle.addEventListener('change', function () {
+            if (this.checked) {
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+
+        // Tab switching
+        function switchTab(tabId, event) {
+            // Update buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+
+            // Clear messages
+            document.getElementById('status').classList.add('hidden');
+            document.getElementById('error').classList.add('hidden');
+        }
+
+        // Helper for form submission
+        async function handleFormSubmit(e, endpoint, formData) {
+            e.preventDefault();
+            const status = document.getElementById('status');
+            const error = document.getElementById('error');
+
+            status.classList.remove('hidden');
+            error.classList.add('hidden');
+            status.innerHTML = '<p>Processing... This may take a minute.</p>';
+            status.classList.remove('success-msg');
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.indexOf("application/json") !== -1) {
+                        const json = await response.json();
+                        console.log(json);
+                        status.innerHTML = `<p>Request Sent! Check console.</p>`;
+                        status.classList.add('success-msg');
+                    } else {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        // Determine filename based on endpoint
+                        a.download = endpoint === '/analyze' ? "TLP_Analysis.xlsx" : "Overall_Result_Analysis.xlsx";
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        status.innerHTML = `<p>Analysis complete! Report downloaded successfully.</p>`;
+                        status.classList.add('success-msg');
+                        setTimeout(() => {
+                            status.classList.add('hidden');
+                            status.classList.remove('success-msg');
+                        }, 3000);
+                    }
+                } else {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Upload failed');
+                }
+            } catch (err) {
+                status.classList.add('hidden');
+                error.textContent = err.message;
+                error.classList.remove('hidden');
+            }
+        }
+
+        // Self Analysis Form
+        document.getElementById('uploadForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+            submitBtn.style.cursor = 'not-allowed';
+            
+            const formData = new FormData();
+            formData.append('teacher_name', document.getElementById('teacherName').value);
+            const fileInput = document.getElementById('pdfFile');
+            for (let i = 0; i < fileInput.files.length; i++) {
+                formData.append('files', fileInput.files[i]);
+            }
+            
+            handleFormSubmit(e, '/analyze', formData).finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+            });
+        });
+
+        // Overall Analysis Form - Now handles single file download
+        document.getElementById('overallForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('overallSubmitBtn');
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+            submitBtn.style.cursor = 'not-allowed';
+            
+            const status = document.getElementById('status');
+            const error = document.getElementById('error');
+
+            status.classList.remove('hidden');
+            error.classList.add('hidden');
+            status.innerHTML = '<p>Processing... This may take a minute.</p>';
+            status.classList.remove('success-msg');
+
+            const formData = new FormData();
+            const fileInput = document.getElementById('overallPdfFile');
+            for (let i = 0; i < fileInput.files.length; i++) {
+                formData.append('files', fileInput.files[i]);
+            }
+
+            try {
+                const response = await fetch('/analyze_overall', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Overall_Analysis_All_Subjects.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    
+                    status.innerHTML = `<p>Overall analysis complete! Report downloaded successfully.</p>`;
+                    status.classList.add('success-msg');
+                    setTimeout(() => {
+                        status.classList.add('hidden');
+                        status.classList.remove('success-msg');
+                    }, 3000);
+                } else {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Upload failed');
+                }
+            } catch (err) {
+                status.classList.add('hidden');
+                error.textContent = err.message;
+                error.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+            }
+        });
+
+        // FA Tab - Dynamic Faculty Entry Management
+        let facultyEntryCount = 0;
+
+        function addFacultyEntry() {
+            facultyEntryCount++;
+            const container = document.getElementById('facultyEntriesContainer');
+            const entry = document.createElement('div');
+            entry.className = 'faculty-entry';
+            entry.id = `faculty-entry-${facultyEntryCount}`;
+            entry.innerHTML = `
+                <div class="faculty-entry-header">
+                    <span class="faculty-entry-title">Faculty Member ${facultyEntryCount}</span>
+                    <button type="button" class="remove-btn" onclick="removeFacultyEntry(${facultyEntryCount})">Remove</button>
+                </div>
+                <div class="faculty-inputs">
+                    <div>
+                        <label for="facultyName-${facultyEntryCount}">Faculty Name</label>
+                        <input type="text" id="facultyName-${facultyEntryCount}" name="faculty_name_${facultyEntryCount}" 
+                               placeholder="e.g., Dr. John" required>
+                    </div>
+                    <div>
+                        <label for="subjectCode-${facultyEntryCount}">Subject Code</label>
+                        <input type="text" id="subjectCode-${facultyEntryCount}" name="subject_code_${facultyEntryCount}" 
+                               placeholder="e.g., 21CSC209J" required>
+                    </div>
+                </div>
+            `;
+            container.appendChild(entry);
+        }
+
+        function removeFacultyEntry(entryId) {
+            const entry = document.getElementById(`faculty-entry-${entryId}`);
+            if (entry) {
+                entry.remove();
+            }
+        }
+
+        // Initialize with one faculty entry
+        document.addEventListener('DOMContentLoaded', () => {
+            addFacultyEntry();
+        });
+
+        // FA Form Submission
+        document.getElementById('faForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('faSubmitBtn');
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+            submitBtn.style.cursor = 'not-allowed';
+            
+            const status = document.getElementById('status');
+            const error = document.getElementById('error');
+
+            status.classList.remove('hidden');
+            error.classList.add('hidden');
+            status.innerHTML = '<p>Processing FA analysis... This may take a few minutes.</p>';
+            status.classList.remove('success-msg');
+
+            // Collect faculty data
+            const facultyData = [];
+            const entries = document.querySelectorAll('.faculty-entry');
+            
+            if (entries.length === 0) {
+                error.textContent = 'Please add at least one faculty member';
+                error.classList.remove('hidden');
+                status.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+                return;
+            }
+
+            entries.forEach(entry => {
+                const entryId = entry.id.split('-')[2];
+                const nameInput = document.getElementById(`facultyName-${entryId}`);
+                const codeInput = document.getElementById(`subjectCode-${entryId}`);
+                
+                if (nameInput && codeInput && nameInput.value && codeInput.value) {
+                    facultyData.push({
+                        name: nameInput.value.trim(),
+                        subject_code: codeInput.value.trim()
+                    });
+                }
+            });
+
+            if (facultyData.length === 0) {
+                error.textContent = 'Please fill in all faculty names and subject codes';
+                error.classList.remove('hidden');
+                status.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+                return;
+            }
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('fa_name', document.getElementById('faName').value);
+            formData.append('faculty_data', JSON.stringify(facultyData));
+            
+            const fileInput = document.getElementById('faPdfFile');
+            for (let i = 0; i < fileInput.files.length; i++) {
+                formData.append('files', fileInput.files[i]);
+            }
+
+            try {
+                const response = await fetch('/analyze_fa', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `FA_${document.getElementById('faName').value}_Report.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    
+                    status.innerHTML = `<p>FA Analysis complete! Report downloaded successfully.</p>`;
+                    status.classList.add('success-msg');
+                    setTimeout(() => {
+                        status.classList.add('hidden');
+                        status.classList.remove('success-msg');
+                    }, 3000);
+                } else {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'FA Analysis failed');
+                }
+            } catch (err) {
+                status.classList.add('hidden');
+                error.textContent = err.message;
+                error.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+            }
+        });
+    </script>
+</body>
+
+</html>
