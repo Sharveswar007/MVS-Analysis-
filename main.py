@@ -282,52 +282,51 @@ async def analyze_overall(files: list[UploadFile] = File(...)):
         # 1. Process all files
         results = []
         files.sort(key=lambda f: f.filename)
-    
-    from extractor import extract_overall_data
-    import base64
-    from collections import defaultdict
-    
-    import logging
-    logging.basicConfig(filename='server_debug.log', level=logging.INFO, force=True)
-    
-    ocp_api_key = os.getenv("OCR_API_KEY")
-    logging.info(f"Analyze Overall Request received. Files: {len(files)}")
-    logging.info(f"OCR API Key Loaded: {bool(ocp_api_key)}")
-    if ocp_api_key:
-        logging.info(f"API Key start: {ocp_api_key[:4]}...")
-    
-    for file in files:
-        if not file.filename.lower().endswith('.pdf'):
-            continue
-            
-        contents = await file.read()
-        try:
-            # Extract aggregated data for this file
-            logging.info(f"Processing {file.filename}, size {len(contents)}")
-            extracted_data = extract_overall_data(contents, ocp_api_key)
-            
-            if extracted_data:
-                logging.info(f"SUCCESS extraction for {file.filename}")
-                extracted_data['filename'] = file.filename
-                results.append(extracted_data)
-            else:
-                logging.warning(f"FAILED extraction for {file.filename}: No data found.")
-        except Exception as e:
-            logging.error(f"Error processing {file.filename}: {e}")
-            import traceback
-            logging.error(traceback.format_exc())
+        
+        from extractor import extract_overall_data
+        import base64
+        from collections import defaultdict
+        
+        import logging
+        logging.basicConfig(filename='server_debug.log', level=logging.INFO, force=True)
+        
+        ocp_api_key = os.getenv("OCR_API_KEY")
+        logging.info(f"Analyze Overall Request received. Files: {len(files)}")
+        logging.info(f"OCR API Key Loaded: {bool(ocp_api_key)}")
+        if ocp_api_key:
+            logging.info(f"API Key start: {ocp_api_key[:4]}...")
+        
+        for file in files:
+            if not file.filename.lower().endswith('.pdf'):
+                continue
+                
+            contents = await file.read()
+            try:
+                # Extract aggregated data for this file
+                logging.info(f"Processing {file.filename}, size {len(contents)}")
+                extracted_data = extract_overall_data(contents, ocp_api_key)
+                
+                if extracted_data:
+                    logging.info(f"SUCCESS extraction for {file.filename}")
+                    extracted_data['filename'] = file.filename
+                    results.append(extracted_data)
+                else:
+                    logging.warning(f"FAILED extraction for {file.filename}: No data found.")
+            except Exception as e:
+                logging.error(f"Error processing {file.filename}: {e}")
+                import traceback
+                logging.error(traceback.format_exc())
 
-    if not results:
-         raise HTTPException(status_code=404, detail="No valid data found in uploaded files.")
+        if not results:
+            raise HTTPException(status_code=404, detail="No valid data found in uploaded files.")
 
-    # 2. Group results by subject_code
-    subject_groups = defaultdict(list)
-    for res in results:
-        subject_code = res.get('subject_code', 'Unknown')
-        subject_groups[subject_code].append(res)
-    
-    # 3. Generate single Excel workbook with multiple sheets (one per subject)
-    try:
+        # 2. Group results by subject_code
+        subject_groups = defaultdict(list)
+        for res in results:
+            subject_code = res.get('subject_code', 'Unknown')
+            subject_groups[subject_code].append(res)
+        
+        # 3. Generate single Excel workbook with multiple sheets (one per subject)
         output = io.BytesIO()
         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
         
