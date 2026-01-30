@@ -1168,11 +1168,15 @@
             try {
                 const response = await fetch('/analyze_overall', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    signal: AbortSignal.timeout(120000) // 2 minute timeout
                 });
 
                 if (response.ok) {
                     const blob = await response.blob();
+                    if (blob.size === 0) {
+                        throw new Error('Received empty file from server');
+                    }
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
@@ -1189,12 +1193,14 @@
                         status.classList.remove('success-msg');
                     }, 3000);
                 } else {
-                    const err = await response.json();
-                    throw new Error(err.detail || 'Upload failed');
+                    const errorText = await response.text();
+                    console.error('Server error:', errorText);
+                    throw new Error(errorText || 'Upload failed');
                 }
             } catch (err) {
+                console.error('Error details:', err);
                 status.classList.add('hidden');
-                error.textContent = err.message;
+                error.textContent = err.name === 'TimeoutError' ? 'Request timeout - try with smaller files' : err.message;
                 error.classList.remove('hidden');
             } finally {
                 submitBtn.disabled = false;
