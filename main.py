@@ -65,28 +65,27 @@ async def analyze(files: list[UploadFile] = File(...), teacher_name: str = Form(
         ocp_api_key = os.getenv("OCR_API_KEY")
 
         for file in files:
-        if not file.filename.lower().endswith('.pdf'):
-            continue
-            
-        contents = await file.read()
-        try:
-            extracted_list = extract_pdf_data(contents, teacher_name, ocp_api_key)
-            if extracted_list:
-                # extracted_list is now a list of dicts
-                # Enrich each with filename
-                for item in extracted_list:
-                    item['filename'] = file.filename
-                    results.append(item)
-            else:
-                # Log missed file
-                print(f"Skipping {file.filename}: Teacher not found.")
-        except Exception as e:
-            print(f"Error processing {file.filename}: {e}")
+            if not file.filename.lower().endswith('.pdf'):
+                continue
+                
+            contents = await file.read()
+            try:
+                extracted_list = extract_pdf_data(contents, teacher_name, ocp_api_key)
+                if extracted_list:
+                    # extracted_list is now a list of dicts
+                    # Enrich each with filename
+                    for item in extracted_list:
+                        item['filename'] = file.filename
+                        results.append(item)
+                else:
+                    # Log missed file
+                    print(f"Skipping {file.filename}: Teacher not found.")
+            except Exception as e:
+                print(f"Error processing {file.filename}: {e}")
 
-    if not results:
-         raise HTTPException(status_code=404, detail=f"No data found for {teacher_name} in any of the uploaded files.")
+        if not results:
+            raise HTTPException(status_code=404, detail=f"No data found for {teacher_name} in any of the uploaded files.")
 
-    try:
         # 2. Excel Generation (Consolidated)
         output = io.BytesIO()
         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
