@@ -55,18 +55,16 @@ async def analyze(files: list[UploadFile] = File(...), teacher_name: str = Form(
     logger.info(f"Received analyze request for teacher: {teacher_name}, files: {len(files)}")
     try:
         # 1. Process all files
-    results = []
-    
-    # Sort files by filename explicitly as requested ("Sort according to PDF")
-    # This ensures "FT1" comes before "FT2" usually.
-    files.sort(key=lambda f: f.filename)
-    
-    files.sort(key=lambda f: f.filename)
-    
-    from extractor import extract_pdf_data, extract_overall_data
-    ocp_api_key = os.getenv("OCR_API_KEY")
+        results = []
+        
+        # Sort files by filename explicitly as requested ("Sort according to PDF")
+        # This ensures "FT1" comes before "FT2" usually.
+        files.sort(key=lambda f: f.filename)
+        
+        from extractor import extract_pdf_data, extract_overall_data
+        ocp_api_key = os.getenv("OCR_API_KEY")
 
-    for file in files:
+        for file in files:
         if not file.filename.lower().endswith('.pdf'):
             continue
             
@@ -265,7 +263,7 @@ async def analyze(files: list[UploadFile] = File(...), teacher_name: str = Form(
         output.seek(0)
         
         headers = {
-            'Content-Disposition': 'attachment; filename="Overall_Subject_Analysis.xlsx"'
+            'Content-Disposition': f'attachment; filename="{teacher_name}_TLP_Analysis.xlsx"'
         }
         return StreamingResponse(
             output, 
@@ -274,17 +272,17 @@ async def analyze(files: list[UploadFile] = File(...), teacher_name: str = Form(
         )
         
     except Exception as e:
+        logger.error(f"Error in analyze endpoint: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        pass
 
 @app.post("/analyze_overall")
 async def analyze_overall(files: list[UploadFile] = File(...)):
-    # 1. Process all files
-    results = []
-    files.sort(key=lambda f: f.filename)
+    try:
+        # 1. Process all files
+        results = []
+        files.sort(key=lambda f: f.filename)
     
     from extractor import extract_overall_data
     import base64
