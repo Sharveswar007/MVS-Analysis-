@@ -872,6 +872,7 @@
                 <button class="tab-btn active" onclick="switchTab('self', event)">Self</button>
                 <button class="tab-btn" onclick="switchTab('fa', event)">FA</button>
                 <button class="tab-btn" onclick="switchTab('overall', event)">Overall</button>
+                <button class="tab-btn" onclick="switchTab('attendance', event)">Low Attendance</button>
             </div>
 
             <!-- Self Tab -->
@@ -940,6 +941,31 @@
                 </form>
             </div>
 
+            <!-- Low Attendance Tab -->
+            <div id="attendance" class="tab-content">
+                <form id="attendanceForm">
+                    <div class="form-group">
+                        <label for="facultyAdvisorName">Faculty Advisor Name</label>
+                        <input type="text" id="facultyAdvisorName" name="faculty_advisor" placeholder="Enter faculty advisor name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sectionName">Section</label>
+                        <input type="text" id="sectionName" name="section" placeholder="e.g., O1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="attendancePdfFile">Upload PDF</label>
+                        <input type="file" id="attendancePdfFile" name="file" accept=".pdf" required>
+                        <small>Select the attendance PDF file.</small>
+                    </div>
+
+                    <button type="submit" id="attendanceSubmitBtn">
+                        <span>Generate Low Attendance Report</span>
+                    </button>
+                </form>
+            </div>
+
             <div id="status" class="status-msg hidden">
                 <p>Processing... This may take a minute.</p>
             </div>
@@ -1003,10 +1029,7 @@
                 </div>
             </div>
 
-            <div class="tech-section">
-                <h3 style="margin-bottom: 0.5rem; text-align: center;">Technologies Used</h3>
-                <p style="text-align: center;">FastAPI • Python • JavaScript • HTML/CSS • XlsxWriter • PDFPlumber</p>
-            </div>
+            
         </div>
     </div>
 
@@ -1344,6 +1367,71 @@
             } catch (err) {
                 status.classList.add('hidden');
                 error.textContent = err.message;
+                error.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+            }
+        });
+
+        // Low Attendance Tab Handler
+        document.getElementById('attendanceForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const status = document.getElementById('status');
+            const error = document.getElementById('error');
+            const submitBtn = document.getElementById('attendanceSubmitBtn');
+
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+            submitBtn.style.cursor = 'not-allowed';
+
+            status.classList.remove('hidden');
+            error.classList.add('hidden');
+            status.innerHTML = '<p>Processing attendance data... This may take a minute.</p>';
+            status.classList.remove('success-msg');
+
+            const formData = new FormData();
+            formData.append('faculty_advisor', document.getElementById('facultyAdvisorName').value);
+            formData.append('section', document.getElementById('sectionName').value);
+            formData.append('file', document.getElementById('attendancePdfFile').files[0]);
+
+            try {
+                const response = await fetch('/analyze_attendance', {
+                    method: 'POST',
+                    body: formData,
+                    signal: AbortSignal.timeout(120000)
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    if (blob.size === 0) {
+                        throw new Error('Received empty file from server');
+                    }
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Low_Attendance_Report.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    
+                    status.innerHTML = '<p>Low attendance report generated successfully!</p>';
+                    status.classList.add('success-msg');
+                    setTimeout(() => {
+                        status.classList.add('hidden');
+                        status.classList.remove('success-msg');
+                    }, 3000);
+                } else {
+                    const errorText = await response.text();
+                    console.error('Server error:', errorText);
+                    throw new Error(errorText || 'Attendance analysis failed');
+                }
+            } catch (err) {
+                console.error('Error details:', err);
+                status.classList.add('hidden');
+                error.textContent = err.name === 'TimeoutError' ? 'Request timeout - try with smaller file' : err.message;
                 error.classList.remove('hidden');
             } finally {
                 submitBtn.disabled = false;

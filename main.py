@@ -682,5 +682,119 @@ async def analyze_fa(files: list[UploadFile] = File(...), fa_name: str = Form(..
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/analyze_attendance")
+async def analyze_attendance(file: UploadFile = File(...), faculty_advisor: str = Form(...), section: str = Form(...)):
+    """
+    Low Attendance Analysis Endpoint
+    Extracts students with attendance < 75% in any subject
+    """
+    logger.info(f"Received attendance analysis request for section: {section}")
+    
+    try:
+        from attendance_extractor import extract_attendance_data
+        
+        # Read PDF file
+        contents = await file.read()
+        logger.info(f"Processing file: {file.filename}, size: {len(contents)} bytes")
+        
+        # Extract attendance data
+        students_data = extract_attendance_data(contents)
+        
+        if not students_data:
+            raise HTTPException(status_code=404, detail="No students with low attendance found or unable to parse PDF")
+        
+        # Generate Excel report
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        worksheet = workbook.add_worksheet("Low Attendance")
+        
+        # Formats
+        title_format = workbook.add_format({'bold': True, 'align': 'center', 'font_size': 14})
+        subtitle_format = workbook.add_format({'bold': True, 'align': 'center', 'font_size': 12})
+        header_format = workbook.add_format({
+            'bold': True,
+            'align': 'center',
+            'valign': 'vcenter',
+            'border': 1,
+            'bg_color': '#CCCCCC',
+            'text_wrap': True
+        })
+        data_format = workbook.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1})
+        data_left_format = workbook.add_format({'align': 'left', 'valign': 'vcenter', 'border': 1})
+        
+        # Write headers
+        worksheet.merge_range('A1:F1', 'SRM INSTITUTE OF SCIENCE AND TECHNOLOGY', title_format)
+        worksheet.merge_range('A2:F2', 'COLLEGE OF ENGINEERING AND TECHNOLOGY', title_format)
+        worksheet.merge_range('A3:F3', 'DEPARTMENT OF COMPUTING TECHNOLOGIES', title_format)
+        worksheet.write('A5', f'SECTION: {section}', subtitle_format)
+        worksheet.write('D5', f'FACULTY ADVISOR: {faculty_advisor}', subtitle_format)
+        
+        # Count total students and subjects
+        total_students_count = len(students_data)
+        total_subjects_count = sum(len(student['subjects']) for student in students_data)
+        
+        worksheet.write('A6', f'TOTAL NUMBER OF STUDENTS: {total_students_count}', subtitle_format)
+        worksheet.write('D6', f'Number of Students Less than 75% (Even in 1 subject): {total_students_count}', subtitle_format)
+        
+        # Table headers
+        headers = ['S.No', 'Register Number', 'Student Name', 'Subject Code', 'Subject Name', 
+                   'Attendance Percentage']
+        
+        worksheet.write_row('A7', headers, header_format)
+        worksheet.set_row(6, 30)
+        
+        # Write student data
+        current_row = 7
+        s_no = 1
+        
+        for student in students_data:
+            num_subjects = len(student['subjects'])
+            start_row = current_row
+            
+            # Write student info with merged cells for multiple subjects
+            if num_subjects > 1:
+                worksheet.merge_range(start_row, 0, start_row + num_subjects - 1, 0, s_no, data_format)
+                worksheet.merge_range(start_row, 1, start_row + num_subjects - 1, 1, student['reg_number'], data_left_format)
+                worksheet.merge_range(start_row, 2, start_row + num_subjects - 1, 2, student['name'], data_left_format)
+            else:
+                worksheet.write(current_row, 0, s_no, data_format)
+                worksheet.write(current_row, 1, student['reg_number'], data_left_format)
+                worksheet.write(current_row, 2, student['name'], data_left_format)
+            
+            # Write subject details
+            for subject in student['subjects']:
+                worksheet.write(current_row, 3, subject['subject_code'], data_format)
+                worksheet.write(current_row, 4, '', data_left_format)  # Subject name - to be filled manually
+                worksheet.write(current_row, 5, subject['attendance_percentage'], data_format)
+                current_row += 1
+            
+            s_no += 1
+        
+        # Set column widths
+        worksheet.set_column('A:A', 6)
+        worksheet.set_column('B:B', 18)
+        worksheet.set_column('C:C', 25)
+        worksheet.set_column('D:D', 20)
+        worksheet.set_column('E:E', 35)
+        worksheet.set_column('F:F', 20)
+        worksheet.set_column('G:G', 18)
+        worksheet.set_column('H:H', 18)
+        
+        workbook.close()
+        output.seek(0)
+        
+        headers = {
+            'Content-Disposition': f'attachment; filename="Low_Attendance_{section}.xlsx"'
+        }
+        
+        return StreamingResponse(output, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers=headers)
+        
+    except Exception as e:
+        logger.error(f"Error in attendance analysis: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
