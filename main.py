@@ -284,7 +284,6 @@ async def analyze_overall(files: list[UploadFile] = File(...)):
         files.sort(key=lambda f: f.filename)
         
         from extractor import extract_overall_data
-        import base64
         from collections import defaultdict
         
         import logging
@@ -320,13 +319,14 @@ async def analyze_overall(files: list[UploadFile] = File(...)):
         if not results:
             raise HTTPException(status_code=404, detail="No valid data found in uploaded files.")
 
-        # 2. Group results by subject_code
-        subject_groups = defaultdict(list)
+        # 2. Group results by subject_code, then by test component (dataset)
+        subject_component_groups = defaultdict(lambda: defaultdict(list))
         for res in results:
             subject_code = res.get('subject_code', 'Unknown')
-            subject_groups[subject_code].append(res)
+            dataset = res.get('dataset', 'Unknown')  # FT1, FT2, etc.
+            subject_component_groups[subject_code][dataset].append(res)
         
-        # 3. Generate single Excel workbook with multiple sheets (one per subject)
+        # 3. Generate single Excel workbook with multiple sheets (one per test component)
         output = io.BytesIO()
         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
         
@@ -336,115 +336,113 @@ async def analyze_overall(files: list[UploadFile] = File(...)):
         table_header_format = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
         data_format = workbook.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1})
         percent_format = workbook.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '0.00'})
+        totals_format = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#D3D3D3'})
     
-        for subject_code, subject_results in subject_groups.items():
-            # Create sheet for this subject (clean sheet name)
-            sheet_name = subject_code[:31].replace('/', '_').replace('\\', '_').replace(':', '_').replace('*', '_').replace('?', '_').replace('[', '_').replace(']', '_')
-            worksheet = workbook.add_worksheet(sheet_name)
-            
-            # Metadata from first file
-            first_meta = subject_results[0]
+        # Process each subject (should typically be just one)
+        for subject_code, component_groups in subject_component_groups.items():
+            # Get metadata from first result
+            first_meta = results[0]
             subject_text = f"Subject Code & Name: {first_meta.get('subject_code', '')} - {first_meta.get('course', '')}"
-
-            # Global Header
-            worksheet.merge_range('A1:M1', 'SRM Institute of Science and Technology, Kattankulathur', title_format)
-            worksheet.merge_range('A2:M2', 'School of Computing', subtitle_format)
-            worksheet.merge_range('A3:M3', 'Department of Computing Technologies', subtitle_format)
-            worksheet.merge_range('A4:M4', '(ACADEMIC YEAR AY 2024-25)-Odd', subtitle_format)
-            worksheet.merge_range('A5:M5', f'Course : {first_meta.get("course", "B.Tech")}   Year : II   Sem: III', subtitle_format)
-            worksheet.merge_range('A6:M6', subject_text, title_format)            # Headers
-            headers = [
-                "S.No", "Test Component", "Total No. of\nStudents", 
-                "Range of\nmarks 0-49", "Range of\nmarks 50-59", "Range of\nmarks 60-69", 
-                "Range of\nmarks 70-79", "Range of\nmarks 80-89", "Range of\nmarks 90-100", 
-                "No. of\nAbsentees", "No. of Pass", "No. of Failure", "Pass %"
-            ]
             
-            start_row = 7
-            worksheet.write_row(start_row, 0, headers, table_header_format)
-            worksheet.set_row(start_row, 40)
-            
-            current_row = start_row + 1
-            
-            for idx, res in enumerate(subject_results):
-                m = res['data']['metrics']
-                strength = int(float(m[0]))
-                absent = int(float(m[1]))
-                fail = int(float(m[2]))
-                pass_pct = float(m[3])
-                ranges = [int(float(x)) for x in m[4:]]
-                passed = int(strength - absent - fail)
+            # Create a sheet for each test component
+            for component_name in sorted(component_groups.keys()):
+                component_results = component_groups[component_name]
                 
-                row_data = [
-                    idx + 1,
-                    res['dataset'], # FT1, FT2...
-                    strength,
-                    ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5],
-                    absent,
-                    passed,
-                    fail,
-                    pass_pct
+                # Create sheet name from component (e.g., "FT-I" -> "FT1")
+                clean_component = component_name.replace('-', '').replace(' ', '')[:10]
+                sheet_name = clean_component
+                
+                try:
+                    worksheet = workbook.add_worksheet(sheet_name)
+                except:
+                    # If sheet name has invalid characters, clean it
+                    sheet_name = clean_component.replace('/', '_').replace('\\', '_').replace(':', '_').replace('*', '_').replace('?', '_').replace('[', '_').replace(']', '_')[:31]
+                    worksheet = workbook.add_worksheet(sheet_name)
+                
+                # Global Header
+                worksheet.merge_range('A1:M1', 'SRM Institute of Science and Technology, Kattankulathur', title_format)
+                worksheet.merge_range('A2:M2', 'School of Computing', subtitle_format)
+                worksheet.merge_range('A3:M3', 'Department of Computing Technologies', subtitle_format)
+                worksheet.merge_range('A4:M4', '(ACADEMIC YEAR AY 2024-25)-Odd', subtitle_format)
+                worksheet.merge_range('A5:M5', f'Course : {first_meta.get("course", "B.Tech")}   Year : II   Sem: III', subtitle_format)
+                worksheet.merge_range('A6:M6', subject_text, title_format)
+                
+                # Headers
+                headers = [
+                    "S.No", "Test Component", "Total No. of\nStudents", 
+                    "Range of\nmarks 0-49", "Range of\nmarks 50-59", "Range of\nmarks 60-69", 
+                    "Range of\nmarks 70-79", "Range of\nmarks 80-89", "Range of\nmarks 90-100", 
+                    "No. of\nAbsentees", "No. of Pass", "No. of Failure", "Pass %"
                 ]
                 
-                worksheet.write_row(current_row, 0, row_data, data_format)
+                start_row = 7
+                worksheet.write_row(start_row, 0, headers, table_header_format)
+                worksheet.set_row(start_row, 40)
+                
+                current_row = start_row + 1
+                
+                # Calculate totals for this component
+                total_strength = 0
+                total_absent = 0
+                total_fail = 0
+                total_ranges = [0, 0, 0, 0, 0, 0]
+                
+                for res in component_results:
+                    m = res['data']['metrics']
+                    strength = int(float(m[0]))
+                    absent = int(float(m[1]))
+                    fail = int(float(m[2]))
+                    ranges = [int(float(x)) for x in m[4:]]
+                    
+                    # Add to totals
+                    total_strength += strength
+                    total_absent += absent
+                    total_fail += fail
+                    for i in range(len(ranges)):
+                        total_ranges[i] += ranges[i]
+                
+                # Calculate totals
+                total_appeared = total_strength - total_absent
+                total_passed = total_appeared - total_fail
+                total_pass_pct = 0.0
+                if total_appeared > 0:
+                    total_pass_pct = (total_passed / total_appeared) * 100
+                
+                # Write totals row (only one row per component)
+                totals_row_data = [
+                    1,
+                    component_name,
+                    total_strength,
+                    total_ranges[0], total_ranges[1], total_ranges[2], total_ranges[3], total_ranges[4], total_ranges[5],
+                    total_absent,
+                    total_passed,
+                    total_fail,
+                    total_pass_pct
+                ]
+                
+                worksheet.write_row(current_row, 0, totals_row_data, totals_format)
+                current_row += 2
+                
+                # Add summary statistics below
+                worksheet.write('A' + str(current_row), 'Summary Statistics:', workbook.add_format({'bold': True, 'font_size': 11}))
                 current_row += 1
-            
-            # Summary Table (Test Component vs Pass %)
-            summary_row = current_row + 2
-            worksheet.write(summary_row, 0, "Test Component", table_header_format)
-            worksheet.write(summary_row + 1, 0, "Pass %", table_header_format)
-            
-            for idx, res in enumerate(subject_results):
-                 worksheet.write(summary_row, idx + 1, res['dataset'], data_format)
-                 worksheet.write(summary_row + 1, idx + 1, res['data']['metrics'][3], percent_format)
-             
-            # Chart 1: Overall Result Analysis (Grouped)
-            chart1_row = summary_row + 4
-            chart1 = workbook.add_chart({'type': 'column'})
-            
-            # Categories: Headers C to M (Students...Pass%)
-            category_range = [sheet_name, start_row, 2, start_row, 12] 
-            
-            for r_idx in range(len(subject_results)):
-                d_row = start_row + 1 + r_idx
-                series_name = [sheet_name, d_row, 1] # Test Component
-                values = [sheet_name, d_row, 2, d_row, 12] # Data
                 
-                chart1.add_series({
-                    'name': series_name,
-                    'categories': category_range,
-                    'values': values,
-                })
+                summary_stats = [
+                    ['Total Students', total_strength],
+                    ['Students Appeared', total_appeared],
+                    ['Absent', total_absent],
+                    ['Failures', total_fail],
+                    ['Passed', total_passed],
+                    ['Pass Percentage', f'{total_pass_pct:.2f}%'],
+                ]
                 
-            subject_name = first_meta.get('course', '').split('-')[-1].strip()
-            chart1.set_title({'name': f'Overall Result Analysis - {subject_name}'})
-            chart1.set_style(10)
-            chart1.set_size({'width': 800, 'height': 450})
-            
-            worksheet.insert_chart(chart1_row, 1, chart1)
-            
-            # Chart 2: Pass %
-            chart2_row = chart1_row + 25
-            chart2 = workbook.add_chart({'type': 'column'})
-            
-            num_tests = len(subject_results)
-            chart2.add_series({
-                'name': 'Pass %',
-                'categories': [sheet_name, summary_row, 1, summary_row, num_tests],
-                'values':     [sheet_name, summary_row+1, 1, summary_row+1, num_tests],
-                'data_labels': {'value': True},
-                'fill': {'color': '#4285F4'}
-            })
-            
-            chart2.set_title({'name': f'Pass %'})
-            chart2.set_y_axis({'min': 0, 'max': 100})
-            chart2.set_size({'width': 600, 'height': 400})
-            
-            worksheet.insert_chart(chart2_row, 1, chart2)
-
-            worksheet.set_column('A:A', 5)
-            worksheet.set_column('B:B', 15)
-            worksheet.set_column('C:M', 12)
+                for stat_name, stat_value in summary_stats:
+                    worksheet.write('A' + str(current_row), stat_name, workbook.add_format({'bold': True}))
+                    worksheet.write('B' + str(current_row), stat_value, data_format)
+                    current_row += 1
+                
+                worksheet.set_column('A:A', 25)
+                worksheet.set_column('B:M', 12)
         
         workbook.close()
         output.seek(0)
