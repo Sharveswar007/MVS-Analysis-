@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import shutil
 import os
+import sys
 from dotenv import load_dotenv
 import pandas as pd
 import requests
@@ -17,7 +18,34 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-load_dotenv()
+# Resolve base directory - works with both regular Python and PyInstaller bundled exe
+# PyInstaller sets sys._MEIPASS when running as --onefile exe
+if getattr(sys, 'frozen', False):
+    # Running as PyInstaller bundle
+    BASE_DIR = sys._MEIPASS
+else:
+    # Running as regular Python script
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+ENV_FILE = os.path.join(BASE_DIR, ".env")
+
+# Fallback: if static dir doesn't exist in _MEIPASS, try the script's own directory
+if not os.path.isdir(STATIC_DIR):
+    _script_dir = os.path.dirname(os.path.abspath(__file__))
+    _fallback_static = os.path.join(_script_dir, "static")
+    if os.path.isdir(_fallback_static):
+        STATIC_DIR = _fallback_static
+        logger.info(f"Using fallback STATIC_DIR: {STATIC_DIR}")
+
+if not os.path.exists(ENV_FILE):
+    _script_dir = os.path.dirname(os.path.abspath(__file__))
+    _fallback_env = os.path.join(_script_dir, ".env")
+    if os.path.exists(_fallback_env):
+        ENV_FILE = _fallback_env
+        logger.info(f"Using fallback ENV_FILE: {ENV_FILE}")
+
+load_dotenv(ENV_FILE)
 
 app = FastAPI()
 
@@ -31,14 +59,24 @@ app.add_middleware(
 )
 
 # Mount static files
-if not os.path.exists("static"):
-    os.makedirs("static")
+if not os.path.exists(STATIC_DIR):
+    os.makedirs(STATIC_DIR)
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
-    with open("static/index.html", "r", encoding="utf-8") as f:
+    index_path = os.path.join(STATIC_DIR, "index.html")
+    if not os.path.exists(index_path):
+        # Fallback: try looking relative to the script's actual directory (not _MEIPASS)
+        fallback_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+        fallback_path = os.path.join(fallback_dir, "index.html")
+        if os.path.exists(fallback_path):
+            index_path = fallback_path
+        else:
+            logger.error(f"index.html not found at {index_path} or {fallback_path}")
+            raise HTTPException(status_code=500, detail=f"index.html not found. STATIC_DIR={STATIC_DIR}")
+    with open(index_path, "r", encoding="utf-8") as f:
         return f.read()
 
 @app.get("/favicon.ico", include_in_schema=False)
@@ -795,4 +833,4 @@ async def analyze_attendance(file: UploadFile = File(...), faculty_advisor: str 
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
