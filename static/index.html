@@ -21,7 +21,7 @@
         }
 
         body.dark-mode {
-            background-color: #0f0f0f;
+            background-color: #070b14;
         }
 
         .navbar {
@@ -42,8 +42,9 @@
         }
 
         body.dark-mode .navbar {
-            background-color: #1f2937;
-            border-bottom-color: #374151;
+            background-color: #0d1321;
+            border-bottom-color: #1a2540;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
         }
 
         .navbar-logo img {
@@ -63,7 +64,7 @@
         }
 
         body.dark-mode .navbar-title {
-            color: #ffffff;
+            color: #e2e8f0;
         }
 
         .navbar-links {
@@ -88,12 +89,12 @@
         }
 
         body.dark-mode .navbar-link {
-            color: #e5e7eb;
+            color: #cbd5e1;
         }
 
         body.dark-mode .navbar-link:hover {
-            background-color: #374151;
-            color: #ffffff;
+            background-color: #131c2e;
+            color: #e2e8f0;
         }
 
         .logo-container {
@@ -156,8 +157,8 @@
         }
 
         input:checked+.slider {
-            background-color: #374151;
-            border-color: #1f2937;
+            background-color: #1a2540;
+            border-color: #0d1321;
         }
 
         input:checked+.slider:before {
@@ -187,9 +188,9 @@
         }
 
         body.dark-mode .container {
-            background-color: #1f2937;
-            border-color: #374151;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+            background-color: #0d1321;
+            border-color: #1a2540;
+            box-shadow: 0 4px 12px -1px rgba(0, 0, 0, 0.5), 0 2px 6px -1px rgba(0, 0, 0, 0.4);
         }
 
         @keyframes fadeIn {
@@ -214,7 +215,7 @@
         }
 
         body.dark-mode h1 {
-            color: #ffffff;
+            color: #f1f5f9;
         }
 
         .subtitle {
@@ -226,7 +227,7 @@
         }
 
         body.dark-mode .subtitle {
-            color: #9ca3af;
+            color: #64748b;
         }
 
         .form-group {
@@ -243,7 +244,7 @@
         }
 
         body.dark-mode label {
-            color: #e5e7eb;
+            color: #cbd5e1;
         }
 
         input[type="text"],
@@ -262,9 +263,16 @@
 
         body.dark-mode input[type="text"],
         body.dark-mode input[type="file"] {
-            background-color: #374151;
-            border-color: #4b5563;
-            color: #ffffff;
+            background-color: #131c2e;
+            border-color: #253352;
+            color: #e2e8f0;
+        }
+
+        body.dark-mode input[type="text"]:read-only {
+            background-color: #0f1726 !important;
+            border-color: #1a2540 !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed;
         }
 
         input[type="text"]:focus {
@@ -274,8 +282,8 @@
         }
 
         body.dark-mode input[type="text"]:focus {
-            border-color: #ffffff;
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
         }
 
         input[type="file"] {
@@ -296,9 +304,9 @@
         }
 
         body.dark-mode input[type="file"]::file-selector-button {
-            background-color: #ffffff;
-            border-color: #ffffff;
-            color: #000000;
+            background-color: #e2e8f0;
+            border-color: #e2e8f0;
+            color: #0d1321;
         }
 
         input[type="file"]::file-selector-button:hover {
@@ -315,7 +323,7 @@
         }
 
         body.dark-mode small {
-            color: #9ca3af;
+            color: #64748b;
         }
 
         button {
@@ -337,9 +345,9 @@
         }
 
         body.dark-mode button {
-            background-color: #ffffff;
-            border-color: #ffffff;
-            color: #000000;
+            background-color: #e2e8f0;
+            border-color: #e2e8f0;
+            color: #0d1321;
         }
 
         button:hover {
@@ -357,7 +365,7 @@
         }
 
         body.dark-mode button:focus {
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25);
         }
 
         .hidden {
@@ -377,9 +385,9 @@
         }
 
         body.dark-mode .status-msg {
-            color: #e5e7eb;
-            background-color: #374151;
-            border-color: #4b5563;
+            color: #e2e8f0;
+            background-color: #131c2e;
+            border-color: #253352;
         }
 
         @keyframes slideIn {
@@ -408,7 +416,7 @@
 
         body.dark-mode .error-msg {
             color: #fecaca;
-            background-color: #374151;
+            background-color: #131c2e;
             border-color: #ef4444;
         }
 
@@ -419,9 +427,9 @@
         }
 
         body.dark-mode .success-msg {
-            color: #e5e7eb !important;
-            background-color: #374151 !important;
-            border-color: #ffffff !important;
+            color: #e2e8f0 !important;
+            background-color: #131c2e !important;
+            border-color: #60a5fa !important;
         }
 
         @media (max-width: 640px) {
@@ -498,24 +506,24 @@
         }
 
         body.dark-mode .tabs {
-            border-bottom-color: #4b5563;
+            border-bottom-color: #1a2540;
         }
 
         body.dark-mode .tab-btn {
-            color: #9ca3af;
+            color: #64748b;
             background: transparent !important;
         }
 
         body.dark-mode .tab-btn:hover {
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.1) !important;
+            color: #e2e8f0;
+            background: rgba(96, 165, 250, 0.08) !important;
         }
 
         body.dark-mode .tab-btn.active {
-            color: #ffffff;
-            background: #1f2937 !important;
-            border: 2px solid #ffffff !important;
-            border-bottom: 3px solid #ffffff !important;
+            color: #e2e8f0;
+            background: #0d1321 !important;
+            border: 2px solid #60a5fa !important;
+            border-bottom: 3px solid #60a5fa !important;
             border-radius: 0.5rem 0.5rem 0 0 !important;
         }
 
@@ -545,7 +553,8 @@
         }
 
         body.dark-mode .faculty-entry {
-            border-color: #4b5563;
+            border-color: #1a2540;
+            background-color: #0a1019;
         }
 
         .faculty-entry-header {
@@ -562,7 +571,7 @@
         }
 
         body.dark-mode .faculty-entry-title {
-            color: #e5e7eb;
+            color: #cbd5e1;
         }
 
         .remove-btn {
@@ -595,7 +604,7 @@
         body.dark-mode .add-faculty-btn {
             background-color: #10b981 !important;
             border-color: #10b981 !important;
-            color: #000000 !important;
+            color: #052e16 !important;
         }
 
         .add-faculty-btn:hover {
@@ -631,8 +640,8 @@
         }
 
         body.dark-mode .footer {
-            background-color: #1f2937;
-            border-top-color: #374151;
+            background-color: #0d1321;
+            border-top-color: #1a2540;
         }
 
         .footer-link {
@@ -648,15 +657,15 @@
         }
 
         body.dark-mode .footer-link {
-            color: #9ca3af;
+            color: #64748b;
         }
 
         body.dark-mode .footer-link:hover {
-            color: #ffffff;
+            color: #e2e8f0;
         }
 
         .about-page {
-            max-width: 800px;
+            max-width: 960px;
             margin: 0 auto;
             padding: 2rem;
             padding-top: 6rem;
@@ -691,23 +700,21 @@
         }
 
         body.dark-mode .back-button {
-            background-color: #1f2937;
-            border-color: #4b5563;
-            color: #ffffff;
+            background-color: #0d1321;
+            border-color: #253352;
+            color: #e2e8f0;
         }
 
         body.dark-mode .back-button:hover {
-            background-color: #374151;
-            border-color: #ffffff;
+            background-color: #131c2e;
+            border-color: #60a5fa;
         }
 
         .team-section {
-            display: flex;
-            flex-direction: row;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 2rem;
             margin-bottom: 3rem;
-            justify-content: center;
-            flex-wrap: wrap;
         }
 
         .team-member {
@@ -720,11 +727,11 @@
             border: 2px solid #e5e7eb;
             border-radius: 0.5rem;
             transition: all 0.3s ease;
-            flex: 0 1 280px;
         }
 
         body.dark-mode .team-member {
-            border-color: #4b5563;
+            border-color: #1a2540;
+            background-color: #0d1321;
         }
 
         .team-member:hover {
@@ -733,7 +740,8 @@
         }
 
         body.dark-mode .team-member:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            border-color: #253352;
         }
 
         .member-photo {
@@ -746,7 +754,7 @@
         }
 
         body.dark-mode .member-photo {
-            border-color: #4b5563;
+            border-color: #253352;
         }
 
         .member-photo.zoom {
@@ -761,7 +769,7 @@
         }
 
         body.dark-mode .team-member h3 {
-            color: #ffffff;
+            color: #f1f5f9;
         }
 
         .member-role {
@@ -771,7 +779,7 @@
         }
 
         body.dark-mode .member-role {
-            color: #9ca3af;
+            color: #64748b;
         }
 
         .tech-section {
@@ -783,8 +791,8 @@
         }
 
         body.dark-mode .tech-section {
-            background-color: #1f2937;
-            border-color: #4b5563;
+            background-color: #0d1321;
+            border-color: #1a2540;
         }
 
         .tech-section h3 {
@@ -792,7 +800,7 @@
         }
 
         body.dark-mode .tech-section h3 {
-            color: #ffffff;
+            color: #f1f5f9;
         }
 
         .tech-section p {
@@ -800,7 +808,7 @@
         }
 
         body.dark-mode .tech-section p {
-            color: #d1d5db;
+            color: #94a3b8;
         }
 
         .social-links {
@@ -827,14 +835,14 @@
         }
 
         body.dark-mode .social-link {
-            color: #9ca3af;
-            border-color: #4b5563;
+            color: #94a3b8;
+            border-color: #253352;
         }
 
         body.dark-mode .social-link:hover {
-            background-color: #374151;
-            border-color: #ffffff;
-            color: #ffffff;
+            background-color: #131c2e;
+            border-color: #60a5fa;
+            color: #e2e8f0;
         }
     </style>
 </head>
@@ -957,7 +965,23 @@
                     <div class="form-group">
                         <label for="attendancePdfFile">Upload PDF</label>
                         <input type="file" id="attendancePdfFile" name="file" accept=".pdf" required>
-                        <small>Select the attendance PDF file.</small>
+                        <small>Select the attendance PDF file, then click "Detect Subjects" to auto-fill codes.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="button" class="add-faculty-btn" onclick="detectSubjectsFromPdf()" id="detectSubjectsBtn" style="background-color: #2563eb !important; border-color: #2563eb !important; margin-bottom: 0.5rem !important;">
+                            <span>🔍 Detect Subjects from PDF</span>
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Subjects <span id="subjectDetectStatus" style="font-weight:normal; font-size:0.75rem; color:#6b7280;"></span></label>
+                        <div id="subjectEntriesContainer">
+                            <!-- Subject entries will be added here -->
+                        </div>
+                        <button type="button" class="add-faculty-btn" onclick="addSubjectEntry()">
+                            <span>+ Add Subject</span>
+                        </button>
                     </div>
 
                     <button type="submit" id="attendanceSubmitBtn">
@@ -1269,7 +1293,132 @@
             }
         }
 
-        // Initialize with one faculty entry
+        // Subject Entry Management for Low Attendance Tab
+        let subjectEntryCount = 0;
+
+        function addSubjectEntry() {
+            subjectEntryCount++;
+            const container = document.getElementById('subjectEntriesContainer');
+            const entry = document.createElement('div');
+            entry.className = 'faculty-entry';
+            entry.id = `subject-entry-${subjectEntryCount}`;
+            entry.innerHTML = `
+                <div class="faculty-entry-header">
+                    <span class="faculty-entry-title">Subject ${subjectEntryCount}</span>
+                    <button type="button" class="remove-btn" onclick="removeSubjectEntry(${subjectEntryCount})">Remove</button>
+                </div>
+                <div class="faculty-inputs">
+                    <div>
+                        <label for="subjCode-${subjectEntryCount}">Subject Code</label>
+                        <input type="text" id="subjCode-${subjectEntryCount}"
+                               placeholder="e.g., 21MAB201T" required>
+                    </div>
+                    <div>
+                        <label for="subjName-${subjectEntryCount}">Subject Name</label>
+                        <input type="text" id="subjName-${subjectEntryCount}"
+                               placeholder="e.g., Mathematics" required>
+                    </div>
+                </div>
+            `;
+            container.appendChild(entry);
+        }
+
+        function addSubjectEntryWithCode(code) {
+            subjectEntryCount++;
+            const container = document.getElementById('subjectEntriesContainer');
+            const entry = document.createElement('div');
+            entry.className = 'faculty-entry';
+            entry.id = `subject-entry-${subjectEntryCount}`;
+            entry.innerHTML = `
+                <div class="faculty-entry-header">
+                    <span class="faculty-entry-title">Subject ${subjectEntryCount}</span>
+                    <button type="button" class="remove-btn" onclick="removeSubjectEntry(${subjectEntryCount})">Remove</button>
+                </div>
+                <div class="faculty-inputs">
+                    <div>
+                        <label for="subjCode-${subjectEntryCount}">Subject Code</label>
+                        <input type="text" id="subjCode-${subjectEntryCount}"
+                               placeholder="e.g., 21MAB201T" value="${code}" readonly
+                               class="readonly-input"
+                               style="background-color: #f0f0f0; cursor: not-allowed;">
+                    </div>
+                    <div>
+                        <label for="subjName-${subjectEntryCount}">Subject Name</label>
+                        <input type="text" id="subjName-${subjectEntryCount}"
+                               placeholder="Enter subject name" required>
+                    </div>
+                </div>
+            `;
+            container.appendChild(entry);
+        }
+
+        function removeSubjectEntry(entryId) {
+            const entry = document.getElementById(`subject-entry-${entryId}`);
+            if (entry) {
+                entry.remove();
+            }
+        }
+
+        async function detectSubjectsFromPdf() {
+            const fileInput = document.getElementById('attendancePdfFile');
+            const status = document.getElementById('subjectDetectStatus');
+            const btn = document.getElementById('detectSubjectsBtn');
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('Please select a PDF file first.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            status.textContent = '(Detecting subject codes...)';
+            status.style.color = '#2563eb';
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/detect_subjects', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const codes = data.subject_codes || [];
+
+                    if (codes.length === 0) {
+                        status.textContent = '(No subject codes found in PDF)';
+                        status.style.color = '#dc2626';
+                        return;
+                    }
+
+                    // Clear existing entries
+                    document.getElementById('subjectEntriesContainer').innerHTML = '';
+                    subjectEntryCount = 0;
+
+                    // Add an entry for each detected code
+                    codes.forEach(code => {
+                        addSubjectEntryWithCode(code);
+                    });
+
+                    status.textContent = `(${codes.length} subjects detected — fill in the names)`;
+                    status.style.color = '#059669';
+                } else {
+                    const err = await response.json();
+                    status.textContent = '(Detection failed: ' + (err.detail || 'Unknown error') + ')';
+                    status.style.color = '#dc2626';
+                }
+            } catch (err) {
+                status.textContent = '(Detection failed: ' + err.message + ')';
+                status.style.color = '#dc2626';
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+
+        // Initialize with one faculty entry (no subject entries — detect from PDF instead)
         document.addEventListener('DOMContentLoaded', () => {
             addFacultyEntry();
         });
@@ -1391,10 +1540,26 @@
             status.innerHTML = '<p>Processing attendance data... This may take a minute.</p>';
             status.classList.remove('success-msg');
 
+            // Collect subjects data
+            const subjectsData = [];
+            const subjectEntries = document.querySelectorAll('#subjectEntriesContainer .faculty-entry');
+            subjectEntries.forEach(entry => {
+                const entryId = entry.id.split('-')[2];
+                const codeInput = document.getElementById(`subjCode-${entryId}`);
+                const nameInput = document.getElementById(`subjName-${entryId}`);
+                if (codeInput && nameInput && codeInput.value && nameInput.value) {
+                    subjectsData.push({
+                        code: codeInput.value.trim(),
+                        name: nameInput.value.trim()
+                    });
+                }
+            });
+
             const formData = new FormData();
             formData.append('faculty_advisor', document.getElementById('facultyAdvisorName').value);
             formData.append('section', document.getElementById('sectionName').value);
             formData.append('file', document.getElementById('attendancePdfFile').files[0]);
+            formData.append('subjects_data', JSON.stringify(subjectsData));
 
             try {
                 const response = await fetch('/analyze_attendance', {

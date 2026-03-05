@@ -376,33 +376,56 @@ async def analyze_overall(files: list[UploadFile] = File(...)):
         percent_format = workbook.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1, 'num_format': '0.00'})
         totals_format = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#D3D3D3'})
     
-        # Process each subject (should typically be just one)
+        # Process each subject
+        used_sheet_names = set()
         for subject_code, component_groups in subject_component_groups.items():
-            # Get metadata from first result
-            first_meta = results[0]
-            subject_text = f"Subject Code & Name: {first_meta.get('subject_code', '')} - {first_meta.get('course', '')}"
+            # Get metadata from THIS subject's first result (not global first)
+            first_meta = list(component_groups.values())[0][0]
+            course_name = first_meta.get('course', 'Unknown')
+            course_code = first_meta.get('subject_code', subject_code)
+            subject_text = f"Subject Code & Name: {course_code} - {course_name}"
             
-            # Create a sheet for each test component
+            # Normalize component groups: clean names but keep individual results separate
+            # Count occurrences of each cleaned component name
+            clean_component_counts = defaultdict(int)
+            component_entries = []
             for component_name in sorted(component_groups.keys()):
-                component_results = component_groups[component_name]
+                for res in component_groups[component_name]:
+                    clean_component = component_name.replace('-', '').replace(' ', '').strip()
+                    clean_component_counts[clean_component] += 1
+                    component_entries.append((clean_component, clean_component_counts[clean_component], res))
+            
+            # Check which components have duplicates
+            has_duplicates = {k for k, v in clean_component_counts.items() if v > 1}
+            
+            # Create a sheet for each individual result
+            for clean_component, idx, result_data in component_entries:
+                component_results = [result_data]
                 
-                # Create sheet name from component (e.g., "FT-I" -> "FT1")
-                clean_component = component_name.replace('-', '').replace(' ', '')[:10]
-                sheet_name = clean_component
+                # Sheet name format: "course_code-component" or "course_code-component_N" if duplicates
+                if clean_component in has_duplicates:
+                    raw_sheet = f"{course_code}-{clean_component}_{idx}"
+                else:
+                    raw_sheet = f"{course_code}-{clean_component}"
+                sheet_name = raw_sheet.replace('/', '_').replace('\\', '_').replace(':', '_').replace('*', '_').replace('?', '_').replace('[', '_').replace(']', '_')[:31]
                 
-                try:
-                    worksheet = workbook.add_worksheet(sheet_name)
-                except:
-                    # If sheet name has invalid characters, clean it
-                    sheet_name = clean_component.replace('/', '_').replace('\\', '_').replace(':', '_').replace('*', '_').replace('?', '_').replace('[', '_').replace(']', '_')[:31]
-                    worksheet = workbook.add_worksheet(sheet_name)
+                # Ensure uniqueness (safety net)
+                base_name = sheet_name
+                counter = 1
+                while sheet_name.upper() in used_sheet_names:
+                    suffix = f"_{counter}"
+                    sheet_name = base_name[:31 - len(suffix)] + suffix
+                    counter += 1
+                used_sheet_names.add(sheet_name.upper())
+                
+                worksheet = workbook.add_worksheet(sheet_name)
                 
                 # Global Header
                 worksheet.merge_range('A1:M1', 'SRM Institute of Science and Technology, Kattankulathur', title_format)
                 worksheet.merge_range('A2:M2', 'School of Computing', subtitle_format)
                 worksheet.merge_range('A3:M3', 'Department of Computing Technologies', subtitle_format)
                 worksheet.merge_range('A4:M4', '(ACADEMIC YEAR AY 2024-25)-Odd', subtitle_format)
-                worksheet.merge_range('A5:M5', f'Course : {first_meta.get("course", "B.Tech")}   Year : II   Sem: III', subtitle_format)
+                worksheet.merge_range('A5:M5', f'Course : {course_name}   Year : II   Sem: III', subtitle_format)
                 worksheet.merge_range('A6:M6', subject_text, title_format)
                 
                 # Headers
@@ -478,6 +501,72 @@ async def analyze_overall(files: list[UploadFile] = File(...)):
                     worksheet.write('A' + str(current_row), stat_name, workbook.add_format({'bold': True}))
                     worksheet.write('B' + str(current_row), stat_value, data_format)
                     current_row += 1
+                
+                # ---------------------------------------------------------
+                # CHART 1: Marks Distribution (Bar Chart)
+                # ---------------------------------------------------------
+                # Data row is at start_row + 1 (the totals row)
+                data_row = start_row + 1
+                
+                # Write range labels and values in a helper area for chart data
+                chart_data_row = current_row + 2
+                range_labels = ['0-49', '50-59', '60-69', '70-79', '80-89', '90-100']
+                range_values = total_ranges
+                
+                worksheet.write(chart_data_row, 0, 'Marks Range', workbook.add_format({'bold': True}))
+                worksheet.write(chart_data_row, 1, 'No. of Students', workbook.add_format({'bold': True}))
+                for i, (label, val) in enumerate(zip(range_labels, range_values)):
+                    worksheet.write(chart_data_row + 1 + i, 0, label, data_format)
+                    worksheet.write(chart_data_row + 1 + i, 1, val, data_format)
+                
+                chart1 = workbook.add_chart({'type': 'column'})
+                chart1.add_series({
+                    'name': 'Students',
+                    'categories': [sheet_name, chart_data_row + 1, 0, chart_data_row + 6, 0],
+                    'values':     [sheet_name, chart_data_row + 1, 1, chart_data_row + 6, 1],
+                    'fill': {'color': '#4285F4'},
+                    'data_labels': {'value': True},
+                })
+                chart1.set_title({'name': f'Marks Distribution - {course_code} - {clean_component}'})
+                chart1.set_x_axis({'name': 'Marks Range'})
+                chart1.set_y_axis({'name': 'No. of Students'})
+                chart1.set_style(10)
+                chart1.set_size({'width': 600, 'height': 400})
+                chart1.set_legend({'none': True})
+                
+                chart1_row = chart_data_row + 1
+                worksheet.insert_chart(f'E{chart1_row}', chart1)
+                
+                # ---------------------------------------------------------
+                # CHART 2: Pass vs Fail (Pie Chart)
+                # ---------------------------------------------------------
+                pie_data_row = chart1_row + 22  # 22 rows below chart1 to avoid overlap
+                worksheet.write(pie_data_row, 0, 'Result', workbook.add_format({'bold': True}))
+                worksheet.write(pie_data_row, 1, 'Count', workbook.add_format({'bold': True}))
+                worksheet.write(pie_data_row + 1, 0, 'Pass', data_format)
+                worksheet.write(pie_data_row + 1, 1, total_passed, data_format)
+                worksheet.write(pie_data_row + 2, 0, 'Fail', data_format)
+                worksheet.write(pie_data_row + 2, 1, total_fail, data_format)
+                worksheet.write(pie_data_row + 3, 0, 'Absent', data_format)
+                worksheet.write(pie_data_row + 3, 1, total_absent, data_format)
+                
+                chart2 = workbook.add_chart({'type': 'pie'})
+                chart2.add_series({
+                    'name': 'Pass vs Fail',
+                    'categories': [sheet_name, pie_data_row + 1, 0, pie_data_row + 3, 0],
+                    'values':     [sheet_name, pie_data_row + 1, 1, pie_data_row + 3, 1],
+                    'data_labels': {'percentage': True, 'category': True},
+                    'points': [
+                        {'fill': {'color': '#34A853'}},
+                        {'fill': {'color': '#EA4335'}},
+                        {'fill': {'color': '#FBBC05'}},
+                    ],
+                })
+                chart2.set_title({'name': f'Pass/Fail/Absent - {course_code} - {clean_component}'})
+                chart2.set_size({'width': 500, 'height': 400})
+                
+                pie_chart_row = pie_data_row + 5
+                worksheet.insert_chart(f'E{pie_chart_row}', chart2)
                 
                 worksheet.set_column('A:A', 25)
                 worksheet.set_column('B:M', 12)
@@ -718,16 +807,43 @@ async def analyze_fa(files: list[UploadFile] = File(...), fa_name: str = Form(..
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/detect_subjects")
+async def detect_subjects(file: UploadFile = File(...)):
+    """
+    Detect subject codes from an attendance PDF.
+    Returns list of unique subject codes found in the PDF.
+    """
+    from attendance_extractor import detect_subject_codes
+    contents = await file.read()
+    codes = detect_subject_codes(contents)
+    return {"subject_codes": codes}
+
+
 @app.post("/analyze_attendance")
-async def analyze_attendance(file: UploadFile = File(...), faculty_advisor: str = Form(...), section: str = Form(...)):
+async def analyze_attendance(file: UploadFile = File(...), faculty_advisor: str = Form(...), section: str = Form(...), subjects_data: str = Form("")):
     """
     Low Attendance Analysis Endpoint
-    Extracts students with attendance < 75% in any subject
+    Extracts students with attendance < 75% and > 0% in any subject
     """
     logger.info(f"Received attendance analysis request for section: {section}")
     
     try:
+        import json as json_module
         from attendance_extractor import extract_attendance_data
+        
+        # Parse subjects mapping (code -> name) from user input
+        subjects_mapping = {}
+        if subjects_data:
+            try:
+                subjects_list = json_module.loads(subjects_data)
+                for s in subjects_list:
+                    code = s.get('code', '').strip().upper()
+                    name = s.get('name', '').strip()
+                    if code and name:
+                        subjects_mapping[code] = name
+            except Exception as e:
+                logger.warning(f"Failed to parse subjects_data: {e}")
+        logger.info(f"Subjects mapping: {subjects_mapping}")
         
         # Read PDF file
         contents = await file.read()
@@ -799,8 +915,11 @@ async def analyze_attendance(file: UploadFile = File(...), faculty_advisor: str 
             
             # Write subject details
             for subject in student['subjects']:
-                worksheet.write(current_row, 3, subject['subject_code'], data_format)
-                worksheet.write(current_row, 4, '', data_left_format)  # Subject name - to be filled manually
+                subj_code = subject['subject_code']
+                # Look up subject name from user-provided mapping
+                subj_name = subjects_mapping.get(subj_code.upper(), '')
+                worksheet.write(current_row, 3, subj_code, data_format)
+                worksheet.write(current_row, 4, subj_name, data_left_format)
                 worksheet.write(current_row, 5, subject['attendance_percentage'], data_format)
                 current_row += 1
             
